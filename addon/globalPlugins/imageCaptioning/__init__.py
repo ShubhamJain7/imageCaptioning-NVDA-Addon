@@ -12,6 +12,8 @@ from visionEnhancementProviders.screenCurtain import ScreenCurtainSettings
 from contentRecog.recogUi import RecogResultNVDAObject
 from contentRecog import SimpleTextResult
 
+from visionEnhancementProviders.imageCaptioning import ImageCaptioning
+
 from ._doImageCaptioning import DoImageCaptioning
 from ._resultUI import recognizeNavigatorObject
 
@@ -48,12 +50,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		scriptCount = scriptHandler.getLastScriptRepeatCount()
 		if not isScreenCurtainEnabled():
 			x = DoImageCaptioning(SpeakResultAndCreateVirtualResultWindow)
-			# `Alt+NVDA+C` -> filter non-graphic elements
-			if scriptCount==0:
-				recognizeNavigatorObject(x, True)
-			# `Alt+NVDA+C+C+..` -> don't filter non-graphic elements
-			else:
-				recognizeNavigatorObject(x, False)
+			filterNonGraphic = ImageCaptioning.getSettings().filterNonGraphicElements
+			recognizeNavigatorObject(x, filterNonGraphic)
 
 	@script(
 		description=_("Present image captioning result again"),

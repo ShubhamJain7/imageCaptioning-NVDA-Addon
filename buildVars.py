@@ -14,12 +14,12 @@ addon_info = {
 	"addon_name": "imageCaptioning",
 	# Add-on summary, usually the user visible name of the addon.
 	# Translators: Summary for this add-on to be shown on installation and add-on information.
-	"addon_summary": _("Generate captions for images on your screen."),
+	"addon_summary": _("Image Captioning"),
 	# Add-on description
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
 	"addon_description": _("""This add-on allows users to generate captions for image elements on their screen."""),
 	# version
-	"addon_version": "0.1",
+	"addon_version": "0.2",
 	# Author(s)
 	"addon_author": u"Shubham Dilip Jain <shubhamdjain7@gmail.com>",
 	# URL for the add-on documentation support
