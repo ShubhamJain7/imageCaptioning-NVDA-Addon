@@ -13,7 +13,7 @@ from typing import Optional
 #: Keeps track of the recognition in progress, if any.
 _activeRecog: Optional[ContentRecognizer] = None
 
-def recognizeNavigatorObject(recognizer, filterNonGraphic=True):
+def recognizeNavigatorObject(recognizer, filterNonGraphic=True, cachedResults=None):
 	"""User interface function to recognize content in the navigator object.
 	This should be called from a script or in response to a GUI action.
 	@param recognizer: The content recognizer to use.
@@ -46,13 +46,28 @@ def recognizeNavigatorObject(recognizer, filterNonGraphic=True):
 		return
 	if _activeRecog:
 		_activeRecog.cancel()
-	# Translators: Reporting when content recognition (e.g. OCR) begins.
-	ui.message(_("Recognizing"))
+
 	sb = screenBitmap.ScreenBitmap(imgInfo.recogWidth, imgInfo.recogHeight)
 	pixels = sb.captureImage(left, top, width, height)
+
+	rowHashes = []
+	for i in range(imgInfo.recogWidth):
+		row = []
+		for j in range(imgInfo.recogHeight):
+			row.append(pixels[j][i].rgbRed)  # column major order
+		rowHashes.append(hash(str(row)))
+
+	imageHash = hash(str(rowHashes))
+	for result in cachedResults:
+		if result[0] == imageHash:
+			handler = recognizer.getResultHandler(result)
+			return
+
+	# Translators: Reporting when content recognition (e.g. OCR) begins.
+	ui.message(_("Recognizing"))
 	_activeRecog = recognizer
 
-	recognizer.recognize(pixels, imgInfo, _recogOnResult)
+	recognizer.recognize(imageHash, pixels, imgInfo, _recogOnResult)
 
 def _recogOnResult(result):
 	global _activeRecog

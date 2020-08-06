@@ -23,7 +23,8 @@ class DoImageCaptioning(contentRecog.ContentRecognizer):
 	def __init__(self, resultHandlerClass):
 		self.resultHandlerClass = resultHandlerClass
 
-	def recognize(self, pixels, imgInfo, onResult):
+	def recognize(self, imageHash, pixels, imgInfo, onResult):
+		self.imageHash = imageHash
 		self.imgInfo = imgInfo
 		bmp = wx.EmptyBitmap(imgInfo.recogWidth, imgInfo.recogHeight, 32)
 		bmp.CopyFromBuffer(pixels, wx.BitmapBufferFormat_RGB32)
@@ -48,7 +49,8 @@ class DoImageCaptioning(contentRecog.ContentRecognizer):
 		self._onResult = None
 
 	def detect(self, imagePath):
-		result = SayLookTellCaptioning(imagePath).getCaption()
+		caption = SayLookTellCaptioning(imagePath).getCaption()
+		result = (self.imageHash, caption)
 		return result
 
 	def validateObject(self, nav):
