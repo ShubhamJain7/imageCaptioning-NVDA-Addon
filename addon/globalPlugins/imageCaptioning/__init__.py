@@ -64,6 +64,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	)
 	def script_browsePreviousResult(self, gesture):
 		global _cachedResults
+		if len(_cachedResults) == 0:
+			return
 		lastResult = _cachedResults[0]
 		sentenceResult = SimpleTextResult(lastResult.caption)
 		resObj = VirtualResultWindow(result=sentenceResult)
