@@ -4,6 +4,7 @@
 import os
 from ctypes import *
 
+
 class SayLookTellCaptioning():
 
 	def __init__(self, imagePath):
@@ -81,4 +82,4 @@ class SayLookTellCaptioning():
 			if "<" not in word and word != ".":
 				caption = caption + f'{word} '
 		caption = caption.strip() + "."
-		return  caption
+		return caption

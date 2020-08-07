@@ -2,8 +2,8 @@ from autoSettingsUtils.autoSettings import SupportedSettingType
 from vision import providerBase
 import driverHandler
 
-class ImageCaptioningSettings(providerBase.VisionEnhancementProviderSettings):
 
+class ImageCaptioningSettings(providerBase.VisionEnhancementProviderSettings):
 	filterNonGraphicElements = True
 
 	@classmethod
@@ -45,5 +45,6 @@ class ImageCaptioning(providerBase.VisionEnhancementProvider):
 
 	def terminate(self):
 		super().terminate()
+
 
 VisionEnhancementProvider = ImageCaptioning

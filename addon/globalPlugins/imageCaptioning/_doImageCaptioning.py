@@ -5,6 +5,7 @@ import os
 import threading
 import tempfile
 from typing import Any
+from collections import namedtuple
 
 import wx
 import ui
@@ -50,17 +51,19 @@ class DoImageCaptioning(contentRecog.ContentRecognizer):
 
 	def detect(self, imagePath):
 		caption = SayLookTellCaptioning(imagePath).getCaption()
-		result = (self.imageHash, caption)
+		detectionResult = namedtuple('Detection', ['imageHash', 'caption'])
+		result = detectionResult(self.imageHash, caption)
 		return result
 
 	def validateObject(self, nav):
 		if nav.role != ROLE_GRAPHIC:
-			ui.message("Currently focused element is not an image. Please try again with an image element.")
+			ui.message("Currently focused element is not an image. Please try again with an image element or change "
+					"your add-on settings.")
 			log.debug(f"(objectDetection) Navigation object role:{nav.role}")
 			return False
 		return True
 
-	def validateBounds(self, location:RectLTWH):
+	def validateBounds(self, location: RectLTWH):
 		if location.width < _sizeThreshold or location.height < _sizeThreshold:
 			ui.message("Image too small to produce good results. Please try again with a larger image.")
 			log.debug(f"(objectDetection) Capture bounds: width={location.width}, height={location.height}.")
