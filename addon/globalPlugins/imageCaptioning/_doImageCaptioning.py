@@ -21,8 +21,9 @@ _sizeThreshold = 128
 
 
 class DoImageCaptioning(contentRecog.ContentRecognizer):
-	def __init__(self, resultHandlerClass):
+	def __init__(self, resultHandlerClass, timeCreated):
 		self.resultHandlerClass = resultHandlerClass
+		self.timeCreated = timeCreated
 
 	def recognize(self, imageHash, pixels, imgInfo, onResult):
 		self.imageHash = imageHash

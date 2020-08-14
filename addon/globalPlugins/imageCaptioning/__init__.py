@@ -6,42 +6,30 @@ from scriptHandler import script
 from globalCommands import SCRCAT_VISION
 import vision
 import ui
-from collections import deque, namedtuple
-from contentRecog import SimpleTextResult
+import time
 from visionEnhancementProviders.screenCurtain import ScreenCurtainSettings
 from visionEnhancementProviders.imageCaptioning import ImageCaptioning
 
 from ._doImageCaptioning import DoImageCaptioning
-from ._resultUI import recognizeNavigatorObject, VirtualResultWindow
+from ._resultUI import recognizeNavigatorObject, SpeakResult, BrowseableResult
 
 
 def isScreenCurtainEnabled():
 	isEnabled = any([x.providerId == ScreenCurtainSettings.getId()
-					 for x in vision.handler.getActiveProviderInfos()])
+					for x in vision.handler.getActiveProviderInfos()])
 	if isEnabled:
 		ui.message("Screen curtain is enabled. Disable screen curtain to use the object detection add-on.")
 	return isEnabled
 
-
-_cachedResults = deque(maxlen=10)
-
-
-class SpeakResult():
-	def __init__(self, result: namedtuple):
-		self.result = result
-		self.cacheResult()
-
-		ui.message(result.caption)
-
-	def cacheResult(self):
-		global _cachedResults
-		alreadyCached = False
-		for cachedResult in _cachedResults:
-			if self.result.imageHash == cachedResult.imageHash:
-				alreadyCached = True
-				break
-		if not alreadyCached:
-			_cachedResults.appendleft(self.result)
+_lastCalled = 0
+def getScriptCount():
+	global _lastCalled
+	if 0<(time.time() - _lastCalled)<=3:
+		_lastCalled = time.time()
+		return 1
+	else:
+		_lastCalled = time.time()
+		return 0
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
@@ -52,22 +40,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		category=SCRCAT_VISION,
 	)
 	def script_imageCaptioning(self, gesture):
-		global _cachedResults
+		scriptCount = getScriptCount()
+		filterNonGraphic = ImageCaptioning.getSettings().filterNonGraphicElements
 		if not isScreenCurtainEnabled():
-			x = DoImageCaptioning(SpeakResult)
-			filterNonGraphic = ImageCaptioning.getSettings().filterNonGraphicElements
-			recognizeNavigatorObject(x, filterNonGraphic=filterNonGraphic, cachedResults=_cachedResults)
-
-	@script(
-		description=_("Present image captioning result in a virtual, browseable window"),
-		category=SCRCAT_VISION,
-	)
-	def script_browsePreviousResult(self, gesture):
-		global _cachedResults
-		if len(_cachedResults) == 0:
-			return
-		lastResult = _cachedResults[0]
-		sentenceResult = SimpleTextResult(lastResult.caption)
-		resObj = VirtualResultWindow(result=sentenceResult)
-		# This method queues an event to the main thread.
-		resObj.setFocus()
+			if scriptCount==0:
+				recognizer = DoImageCaptioning(SpeakResult, time.time())
+				recognizeNavigatorObject(recognizer, filterNonGraphic=filterNonGraphic)
+			else:
+				recognizer = DoImageCaptioning(BrowseableResult, time.time())
+				recognizeNavigatorObject(recognizer, filterNonGraphic=filterNonGraphic)

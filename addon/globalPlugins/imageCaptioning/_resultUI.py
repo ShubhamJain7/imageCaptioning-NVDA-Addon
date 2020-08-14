@@ -7,106 +7,63 @@ import screenBitmap
 from logHandler import log
 from typing import Optional
 import queueHandler
-from contentRecog import ContentRecognizer, RecogImageInfo
-import NVDAObjects.window
-import controlTypes
-import browseMode
-import cursorManager
-import eventHandler
-import textInfos
+from contentRecog import ContentRecognizer, RecogImageInfo, SimpleTextResult
+from contentRecog.recogUi import RecogResultNVDAObject
+from collections import deque, namedtuple
+import time
+
+_cachedResults = deque(maxlen=10)
 
 
-class VirtualResultWindow(cursorManager.CursorManager, NVDAObjects.window.Window):
-	"""Fake NVDAObject used to present a recognition result in a cursor manager.
-	This allows the user to read the result with cursor keys, etc.
-	Pressing enter will activate (e.g. click) the text at the cursor.
-	Pressing escape dismisses the recognition result.
-	"""
-
-	role = controlTypes.ROLE_DOCUMENT
-	# Translators: The title of the document used to present the result of content recognition.
-	name = _("Result")
-	treeInterceptor = None
-
-	def __init__(self, result=None):
-		self.parent = parent = api.getFocusObject()
+class SpeakResult():
+	def __init__(self, result: namedtuple):
 		self.result = result
-		self._selection = self.makeTextInfo(textInfos.POSITION_FIRST)
-		super(VirtualResultWindow, self).__init__(windowHandle=parent.windowHandle)
+		self.cacheResult()
+		ui.message(result.caption)
 
-	def makeTextInfo(self, position):
-		# Maintain our own fake selection/caret.
-		if position == textInfos.POSITION_SELECTION:
-			ti = self._selection.copy()
-		elif position == textInfos.POSITION_CARET:
-			ti = self._selection.copy()
-			ti.collapse()
-		else:
-			ti = self.result.makeTextInfo(self, position)
-		return self._patchTextInfo(ti)
+	def cacheResult(self):
+		global _cachedResults
+		alreadyCached = False
+		for cachedResult in _cachedResults:
+			if self.result.imageHash == cachedResult.imageHash:
+				alreadyCached = True
+				break
+		if not alreadyCached:
+			_cachedResults.appendleft(self.result)
 
-	def _patchTextInfo(self, info):
-		# Patch TextInfos so that updateSelection/Caret updates our fake selection.
-		info.updateCaret = lambda: self._setSelection(info, True)
-		info.updateSelection = lambda: self._setSelection(info, False)
-		# Ensure any copies get patched too.
-		oldCopy = info.copy
-		info.copy = lambda: self._patchTextInfo(oldCopy())
-		return info
 
-	def _setSelection(self, textInfo, collapse):
-		self._selection = textInfo.copy()
-		if collapse:
-			self._selection.collapse()
+class BrowseableResult():
+	def __init__(self, result: namedtuple):
+		self.result = result
+		self.cacheResult()
 
-	def setFocus(self):
-		ti = self.parent.treeInterceptor
-		if isinstance(ti, browseMode.BrowseModeDocumentTreeInterceptor):
-			# Normally, when entering browse mode from a descendant (e.g. dialog),
-			# we want the cursor to move to the focus (#3145).
-			# However, we don't want this for recognition results, as these aren't focusable.
-			ti._enteringFromOutside = True
-		# This might get called from a background thread and all NVDA events must run in the main thread.
-		eventHandler.queueEvent("gainFocus", self)
+		sentenceResult = SimpleTextResult(result.caption)
+		resObj = RecogResultNVDAObject(result=sentenceResult)
+		resObj.setFocus()
 
-	def script_exit(self, gesture):
-		eventHandler.executeEvent("gainFocus", self.parent)
-
-	# Translators: Describes a command.
-	script_exit.__doc__ = _("Dismiss the recognition result")
-
-	# The find commands are tricky to support because they pop up dialogs.
-	# This moves the focus, so we lose our fake focus.
-	# See https://github.com/nvaccess/nvda/pull/7361#issuecomment-314698991
-	def script_find(self, gesture):
-		# Translators: Reported when a user tries to use a find command when it isn't supported.
-		ui.message(_("Not supported in this document"))
-
-	def script_findNext(self, gesture):
-		# Translators: Reported when a user tries to use a find command when it isn't supported.
-		ui.message(_("Not supported in this document"))
-
-	def script_findPrevious(self, gesture):
-		# Translators: Reported when a user tries to use a find command when it isn't supported.
-		ui.message(_("Not supported in this document"))
-
-	__gestures = {
-		"kb:escape": "exit",
-	}
+	def cacheResult(self):
+		global _cachedResults
+		alreadyCached = False
+		for cachedResult in _cachedResults:
+			if self.result.imageHash == cachedResult.imageHash:
+				alreadyCached = True
+				break
+		if not alreadyCached:
+			_cachedResults.appendleft(self.result)
 
 
 #: Keeps track of the recognition in progress, if any.
 _activeRecog: Optional[ContentRecognizer] = None
 
 
-def recognizeNavigatorObject(recognizer, filterNonGraphic=True, cachedResults=None):
+def recognizeNavigatorObject(recognizer, filterNonGraphic=True):
 	"""User interface function to recognize content in the navigator object.
 	This should be called from a script or in response to a GUI action.
 	@param recognizer: The content recognizer to use.
 	@type recognizer: L{contentRecog.ContentRecognizer}
 	"""
 	global _activeRecog
-	if isinstance(api.getFocusObject(), VirtualResultWindow):
+	if isinstance(api.getFocusObject(), RecogResultNVDAObject):
 		# Translators: Reported when content recognition (e.g. OCR) is attempted,
 		# but the user is already reading a content recognition result.
 		ui.message(_("Already in a content recognition result"))
@@ -130,8 +87,15 @@ def recognizeNavigatorObject(recognizer, filterNonGraphic=True, cachedResults=No
 	except ValueError:
 		ui.message(notVisibleMsg)
 		return
+
 	if _activeRecog:
-		_activeRecog.cancel()
+		if (0 < (time.time() - _activeRecog.timeCreated) <= 3) and (
+				_activeRecog.resultHandlerClass != BrowseableResult):
+			_activeRecog.resultHandlerClass = BrowseableResult
+			ui.message(_("Recognizing"))
+		else:
+			ui.message("Already running an image captioning process. Please try again later.")
+		return
 
 	sb = screenBitmap.ScreenBitmap(imgInfo.recogWidth, imgInfo.recogHeight)
 	pixels = sb.captureImage(left, top, width, height)
@@ -143,13 +107,13 @@ def recognizeNavigatorObject(recognizer, filterNonGraphic=True, cachedResults=No
 			row.append(pixels[j][i].rgbRed)  # column major order
 		rowHashes.append(hash(str(row)))
 
+	global _cachedResults
 	imageHash = hash(str(rowHashes))
-	for result in cachedResults:
+	for result in _cachedResults:
 		if result[0] == imageHash:
 			handler = recognizer.getResultHandler(result)
 			return
 
-	# Translators: Reporting when content recognition (e.g. OCR) begins.
 	ui.message(_("Recognizing"))
 	_activeRecog = recognizer
 
