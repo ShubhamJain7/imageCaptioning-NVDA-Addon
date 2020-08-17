@@ -1,4 +1,4 @@
-# Image Captioning navigator object navigation and recognition tracking
+# Image Captioning navigator object recognition, recognition tracking, result presentation and result caching
 # Copyright 2020 Shubham Dilip Jain, released under the AGPL-3.0 License
 
 import api

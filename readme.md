@@ -3,13 +3,17 @@
 * Author: Shubham Dilip Jain
 * Download: https://github.com/ShubhamJain7/imageCaptioning-NVDA-Addon/releases
 
-This add-on allows users to perform image captioning on image elements present on their screen and get a caption that describes the image in English. The result is announced to the user and if the user wishes, can be presented in a virtual, browseable window that allows users to access the result character-by-character, word-by-word, as a whole and even copy the result. This add-on works well only with "natural images" of people, animals and common-objects.
+This add-on allows users to perform image captioning on image elements present on their screen and get a caption that describes the image in English. The result can be announced to the user or presented in a virtual, browseable window that allows users to access the result character-by-character, word-by-word, as a whole and even copy the result. This add-on works well only with "natural images" of people, animals and common-objects.
 
 ### Usage
 ----
-After installing, the user must first set their preferred gestures at __Preferences->Input gestures->Vision__. There are only two gestures, one for performing detection on a currently focused image and another for accessing the result in a virtual, browseable window. 
-Keying the first gesture triggers the image-captioning process. The user first hears "Recognizing" and then the generated caption is announced whenever it is available (this may take a few seconds). Captions are more accurate when the image is larger and has no padding. Keying the second gesture opens up a virtual browseable window containing the same caption. Users can use navigations keys in this window to browse the caption letter-by-letter, word-by-word, as a whole or even copy the caption. Users must escape this window before starting another image-captioning process. This can be done by pressing the `ESC` key or shifting focus to another element.
-Users can also prevent the image-captioning process to be started on non-graphic elements by checking the `filter non-graphic elements` option under __Preferences->Settings->Vision->Image captioning add-on__. This prevents users from accidentally starting the image-captioning process on elements that do not contain images and will produce bad results. Unchecking it allows users to perform detections on elements that may be containing images but fail to report the same.
+- After installing, the user must first set their preferred gesture at __Preferences->Input gestures->Vision__.
+
+- Keying the gesture once triggers the image-captioning process and the obtained caption is announced to the user (this may take a few seconds). Captions are more accurate when the image is larger and has no padding. 
+
+- Keying the same gesture more than once also triggers the image-captioning process but the caption is presented in a virtual window. Users can use navigations keys in this window to browse the caption letter-by-letter, word-by-word, as a whole or even copy the caption. Users must escape this window before starting another image-captioning process. This can be done by pressing the `ESC` key or shifting focus to another element.
+
+- Users can also prevent the image-captioning process to be started on non-graphic elements by checking the `filter non-graphic elements` option under __Preferences->Settings->Vision->Image captioning add-on__. This prevents users from accidentally starting the image-captioning process on elements that do not contain images and will produce bad results. Unchecking it allows users to perform detections on elements that may be containing images but fail to report the same.
 
 
 ### Building it yourself
