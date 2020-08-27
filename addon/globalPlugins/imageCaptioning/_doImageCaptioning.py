@@ -24,6 +24,7 @@ class DoImageCaptioning(contentRecog.ContentRecognizer):
 	def __init__(self, resultHandlerClass, timeCreated):
 		self.resultHandlerClass = resultHandlerClass
 		self.timeCreated = timeCreated
+		self.checkChildren = False
 
 	def recognize(self, imageHash, pixels, imgInfo, onResult):
 		self.imageHash = imageHash
@@ -56,18 +57,24 @@ class DoImageCaptioning(contentRecog.ContentRecognizer):
 		result = detectionResult(self.imageHash, caption)
 		return result
 
-	def validateObject(self, nav):
-		if nav.role != ROLE_GRAPHIC:
-			ui.message("Currently focused element is not an image. Please try again with an image element or change "
-					"your add-on settings.")
-			log.debug(f"(objectDetection) Navigation object role:{nav.role}")
+	def validateObject(self, obj):
+		if obj.role != ROLE_GRAPHIC:
+			# If in focus mode, check if at least one child of the object is graphic because the focus
+			# object itself will not be graphic.
+			if self.checkChildren:
+				for child in obj.children:
+					if child.role == ROLE_GRAPHIC:
+						return True
+			ui.message("Currently focused element is not an image. Please try again with an image element "
+					"or change your add-on settings.")
+			log.debug(f"(imageCaptioning) Focused object role:{obj.role}")
 			return False
 		return True
 
 	def validateBounds(self, location: RectLTWH):
 		if location.width < _sizeThreshold or location.height < _sizeThreshold:
 			ui.message("Image too small to produce good results. Please try again with a larger image.")
-			log.debug(f"(objectDetection) Capture bounds: width={location.width}, height={location.height}.")
+			log.debug(f"(imageCaptioning) Capture bounds: width={location.width}, height={location.height}.")
 			return False
 		return True
 

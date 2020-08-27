@@ -55,32 +55,44 @@ class BrowseableResult():
 #: Keeps track of the recognition in progress, if any.
 _activeRecog: Optional[ContentRecognizer] = None
 
-
 def recognizeNavigatorObject(recognizer, filterNonGraphic=True):
 	"""User interface function to recognize content in the navigator object.
 	This should be called from a script or in response to a GUI action.
 	@param recognizer: The content recognizer to use.
 	@type recognizer: L{contentRecog.ContentRecognizer}
 	"""
-	global _activeRecog
 	if isinstance(api.getFocusObject(), RecogResultNVDAObject):
 		# Translators: Reported when content recognition (e.g. OCR) is attempted,
 		# but the user is already reading a content recognition result.
 		ui.message(_("Already in a content recognition result"))
 		return
-	nav = api.getNavigatorObject()
-	if filterNonGraphic and not recognizer.validateObject(nav):
+
+	# Get the object that currently has system focus
+	obj = api.getFocusObject()
+	# treeInterceptor may be None is some cases. If so, use the navigator object instead.
+	if obj.treeInterceptor:
+		isFocusModeEnabled = obj.treeInterceptor.passThrough
+		# if Focus mode is enabled we must check if any child of the focus object is graphic because it
+		# itself cannot be graphic
+		if isFocusModeEnabled:
+			recognizer.checkChildren = True
+		# if focus mode is disabled, use the navigator object
+		else:
+			obj = api.getNavigatorObject()
+	else:
+		obj = api.getNavigatorObject()
+
+	if filterNonGraphic and not recognizer.validateObject(obj):
 		return
-	# Translators: Reported when content recognition (e.g. OCR) is attempted,
-	# but the content is not visible.
+	# Translators: Reported when content recognition is attempted, but the content is not visible.
 	notVisibleMsg = _("Content is not visible")
 	try:
-		left, top, width, height = nav.location
+		left, top, width, height = obj.location
 	except TypeError:
-		log.debugWarning("Object returned location %r" % nav.location)
+		log.debugWarning("Object returned location %r" % obj.location)
 		ui.message(notVisibleMsg)
 		return
-	if not recognizer.validateBounds(nav.location):
+	if not recognizer.validateBounds(obj.location):
 		return
 	try:
 		imgInfo = RecogImageInfo.createFromRecognizer(left, top, width, height, recognizer)
@@ -88,6 +100,7 @@ def recognizeNavigatorObject(recognizer, filterNonGraphic=True):
 		ui.message(notVisibleMsg)
 		return
 
+	global _activeRecog
 	if _activeRecog:
 		if (0 < (time.time() - _activeRecog.timeCreated) <= 3) and (
 				_activeRecog.resultHandlerClass != BrowseableResult):
