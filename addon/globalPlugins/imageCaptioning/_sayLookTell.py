@@ -6,27 +6,33 @@ from ctypes import *
 
 
 class SayLookTellCaptioning():
-
+	"""Class that interfaces with the ImageCaptioning DLL that performs image captioning. Responsible for
+	converting results to appropriate formats and ensuring DLL dependencies are satisfied."""
 	def __init__(self, imagePath):
+		""" Defines paths to all the required files (image, DLLs and model files)
+		@param imagePath: path to image to be recognized
+		"""
+		self.imagePath = imagePath
 		self.baseDir = os.path.abspath(os.path.dirname(__file__))
-
-		if not os.path.exists(imagePath):
-			return None
-		else:
-			self.imagePath = imagePath
-
 		self.encoderPath = self.baseDir + "\\data\\encoder.onnx"
 		self.decoderPath = self.baseDir + "\\data\\decoder.onnx"
 		self.vocabPath = self.baseDir + "\\data\\vocab.txt"
+		# Must be in dependency order (ie. A<-B<-C where C depends on B and B depends on A).
 		self.dllPaths = ["\\dlls\\opencv_core430.dll", "\\dlls\\opencv_imgproc430.dll",
 						"\\dlls\\opencv_imgcodecs430.dll", "\\dlls\\onnxruntime.dll",
 						"\\dlls\\ImageCaptioning-DLL.dll"]
 		self.dllPaths = [self.baseDir + dllPath for dllPath in self.dllPaths]
+		self._checkFiles()
 
 	def _checkFiles(self):
+		"""Checks if all the required files are present. Raises a L{FileNotFoundError} if any file is
+		missing"""
 		notFound = ""
+		if not os.path.exists(self.imagePath):
+			notFound = notFound + f'imageCaptioning: Image file not found at {self.imagePath}'
+
 		if not os.path.exists(self.encoderPath):
-			notFound = notFound + f'imageCaptioning: Encoder model file not found at {self.encoderPath}'
+			notFound = notFound + f'\nimageCaptioning: Encoder model file not found at {self.encoderPath}'
 
 		if not os.path.exists(self.decoderPath):
 			notFound = notFound + f'\nimageCaptioning: Decoder model file not found at {self.decoderPath}'
@@ -39,15 +45,19 @@ class SayLookTellCaptioning():
 			raise FileNotFoundError(notFound)
 
 	def _loadDLLs(self):
-		# load dependant DLLs
+		"""Loads all the DLL files."""
+		# loads all the DLLs required by the ImageCaptioning DLL
 		for dllPath in self.dllPaths[:-1]:
 			_ = CDLL(dllPath)
 
-		# load required DLL
+		# load the ImageCaptioning DLL
 		lib = CDLL(self.dllPaths[-1])
 		return lib
 
-	def _getResult(self, lib):
+	def _getResult(self, lib) -> str:
+		"""Calls the DLL public methods and gets the image captioning results.
+		@return: generated caption
+		"""
 		# define return type and arguments of 'doDetection' function
 		lib.doDetection.restype = c_int
 		lib.doDetection.argtypes = [c_wchar_p, c_wchar_p, c_char_p, c_char_p]
@@ -72,7 +82,10 @@ class SayLookTellCaptioning():
 		else:
 			return None
 
-	def getCaption(self):
+	def getCaption(self) -> str:
+		"""Performs image captioning on input image and returns the resulting caption
+		@return: caption
+		"""
 		lib = self._loadDLLs()
 		result = self._getResult(lib)
 		if not result:

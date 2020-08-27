@@ -4,6 +4,8 @@ import driverHandler
 
 
 class ImageCaptioningSettings(providerBase.VisionEnhancementProviderSettings):
+	"""Class that defines the settings for the visionEnhancementProvider"""
+	# only setting we use if is non-graphic elements must be filtered or not.
 	filterNonGraphicElements = True
 
 	@classmethod
@@ -26,6 +28,10 @@ class ImageCaptioningSettings(providerBase.VisionEnhancementProviderSettings):
 
 
 class ImageCaptioning(providerBase.VisionEnhancementProvider):
+	"""Class that defines the visionEnhancementProvider.
+	@note: This is just a dummy class that provides no functionality and only exists to allow settings to
+	show up in the vision category.
+	"""
 	_settings = ImageCaptioningSettings()
 
 	@classmethod  # override
