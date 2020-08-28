@@ -3,6 +3,8 @@
 * Author: Shubham Dilip Jain
 * Download: https://github.com/ShubhamJain7/imageCaptioning-NVDA-Addon/releases
 
+_* This add-on/repository is a part of my [GSoC 2020 project](https://summerofcode.withgoogle.com/projects/#6039693356957696)._
+
 This add-on allows users to perform image captioning on image elements present on their screen and get a caption that describes the image in English. The result can be announced to the user or presented in a virtual, browseable window that allows users to access the result character-by-character, word-by-word, as a whole and even copy the result. This add-on works well only with "natural images" of people, animals and common-objects.
 
 ### Usage
@@ -15,6 +17,7 @@ This add-on allows users to perform image captioning on image elements present o
 
 - Users can also prevent the image-captioning process to be started on non-graphic elements by checking the `filter non-graphic elements` option under __Preferences->Settings->Vision->Image captioning add-on__. This prevents users from accidentally starting the image-captioning process on elements that do not contain images and will produce bad results. Unchecking it allows users to perform detections on elements that may be containing images but fail to report the same.
 
+_Note: In Focus mode, images cannot have focus and so the `filter non-graphic elements` option applies to the children of the focus element and recognition is allowed if at least one child is graphic._
 
 ### Building it yourself
 ----
