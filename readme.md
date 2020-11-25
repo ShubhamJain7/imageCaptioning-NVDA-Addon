@@ -3,7 +3,7 @@
 * Author: Shubham Dilip Jain
 * Download: https://github.com/ShubhamJain7/imageCaptioning-NVDA-Addon/releases
 
-_* This add-on/repository is a part of my [GSoC 2020 project](https://summerofcode.withgoogle.com/projects/#6039693356957696)._
+_* This add-on/repository is a part of my [GSoC 2020 project](https://summerofcode.withgoogle.com/archive/2020/projects/5172016837033984/). Also, see the full [project write up]( https://gist.github.com/ShubhamJain7/7986b9056376c9a70e744e0ab3100b85)._
 
 This add-on allows users to perform image captioning on image elements present on their screen and get a caption that describes the image in English. The result can be announced to the user or presented in a virtual, browseable window that allows users to access the result character-by-character, word-by-word, as a whole and even copy the result. This add-on works well only with "natural images" of people, animals and common-objects.
 
